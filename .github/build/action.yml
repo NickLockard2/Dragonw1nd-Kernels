@@ -408,6 +408,20 @@ runs:
           )
         fi
 
+        make_serial() {
+          local -a serial_make_flags=()
+          local make_flag
+
+          for make_flag in "${MAKE_FLAGS[@]}"; do
+            case "${make_flag}" in
+              -j*|--jobs*) ;;
+              *) serial_make_flags+=("${make_flag}") ;;
+            esac
+          done
+
+          make -j1 "${serial_make_flags[@]}" "$@"
+        }
+
         MAKE_GOALS="Image Image.gz Image.lz4 modules"
         if [[ "${TREE}" == "monolithic" ]]; then
           MAKE_GOALS+=" dtbs"
@@ -496,7 +510,7 @@ runs:
 
           echo " Installing dtbs to staging directory"
           set -x
-          ( cd "${OUT}" && make "${MAKE_FLAGS[@]}" O="${OUT}" INSTALL_DTBS_PATH="${INSTALL_DTBS_PATH}" DTB_TYPES="${DTB_TYPES}" ${MAKE_GOALS} )
+          ( cd "${OUT}" && make_serial O="${OUT}" INSTALL_DTBS_PATH="${INSTALL_DTBS_PATH}" DTB_TYPES="${DTB_TYPES}" ${MAKE_GOALS} )
           set +x
           _line
         else
@@ -558,7 +572,7 @@ runs:
           
           echo " Installing dtbs to staging directory"
           set -x
-          ( cd "${OUT}" && make "${MAKE_FLAGS[@]}" O="${OUT}" INSTALL_DTBS_PATH="${INSTALL_DTBS_PATH}" DTB_TYPES="${DTB_TYPES}" ${MAKE_GOALS} )
+          ( cd "${OUT}" && make_serial O="${OUT}" INSTALL_DTBS_PATH="${INSTALL_DTBS_PATH}" DTB_TYPES="${DTB_TYPES}" ${MAKE_GOALS} )
           set +x
           _line
         fi
