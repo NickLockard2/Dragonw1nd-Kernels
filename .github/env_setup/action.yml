@@ -81,20 +81,15 @@ runs:
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
           git curl ca-certificates build-essential clang lld flex bison \
           libelf-dev libssl-dev libncurses-dev zlib1g-dev lz4 \
-          libxml2-utils rsync unzip dwarves file python3 mkbootimg device-tree-compiler attr
+          libxml2-utils rsync unzip dwarves file python3 mkbootimg device-tree-compiler attr ccache
         sudo apt-get clean
         echo "::endgroup::"
 
-    - name: Install ccache with ECS by cctv18
+    - name: Verify distribution-provided ccache
       shell: bash
       run: |
         set -euo pipefail
-        echo "::group::Install ccache with ECS"
-        wget -q https://github.com/nullptr-t-oss/kernel_kit/raw/refs/heads/main/bin/ccache-x86-64 -O ccache
-        sudo cp -f ./ccache /usr/bin/ccache
-        sudo chmod +x /usr/bin/ccache
-        rm -f ./ccache
-
+        echo "::group::Verify ccache"
         echo "[DEBUG] Ccache version : $(ccache --version)"
 
         if ccache --help 2>&1 | grep -q 'depend_mode'; then
@@ -106,7 +101,7 @@ runs:
         echo "::endgroup::"
 
     - name: Setup SWAP
-      uses: pierotofy/set-swap-space@master
+      uses: pierotofy/set-swap-space@fc79b3f67fa8a838184ce84a674ca12238d2c761
       with:
         swap-size-gb: 16
 
@@ -223,9 +218,12 @@ runs:
         ANYKERNEL_BRANCH="gki-2.0"
 
         echo "Using AnyKernel3 branch: $ANYKERNEL_BRANCH"
-        git clone --depth=1 https://github.com/nullptr-t-oss/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
-        git clone --depth=1 https://github.com/TheWildJames/kernel_patches.git
-        git clone --depth=1 https://github.com/nullptr-t-oss/kernel_kit.git
+        git clone --filter=blob:none --no-checkout https://github.com/nullptr-t-oss/AnyKernel3.git
+        git -C AnyKernel3 checkout --detach 5371059e59175b146bcf96066e881a3cff506332
+        git clone --filter=blob:none --no-checkout https://github.com/TheWildJames/kernel_patches.git
+        git -C kernel_patches checkout --detach a9ccf6ebee3aba7e39213e361e45fbffd485205d
+        git clone --filter=blob:none --no-checkout https://github.com/nullptr-t-oss/kernel_kit.git
+        git -C kernel_kit checkout --detach 255b6030312be1c5c1849704ca65d109234c6751
         # git clone --depth=1 https://github.com/Bouteillepleine/kernel_patches.git -b main bouton_kernel_patches
 
     - name: Setup Base Environment
@@ -276,7 +274,8 @@ runs:
         # Install repo tool if missing
         REPO="/usr/local/bin/repo"
         if [ ! -x "${REPO}" ]; then
-          curl -s https://storage.googleapis.com/git-repo-downloads/repo -o "$REPO"
+          curl -sS --fail --location --proto '=https' https://storage.googleapis.com/git-repo-downloads/repo -o "$REPO"
+          echo "05f571deafd6ed6da0d20fa707dde29aa5624dbf35553d697a40dbdd4c8d178a  $REPO" | sha256sum --check --strict
           chmod +x "${REPO}"
         fi
         echo "REPO=${REPO}" >> "${GITHUB_ENV}"
@@ -382,7 +381,7 @@ runs:
         echo "CLANG=${{ inputs.clang_version }}" >> "${GITHUB_ENV}"
 
     - name: Download Clang (toolchain for build)
-      uses: nullptr-t-oss/kernel_toolchains/clang_setup@main
+      uses: nullptr-t-oss/kernel_toolchains/clang_setup@a755394c64956d91aa7fb03f017dde7db55202cc
       if: env.CLANG != 'manifest'
       with:
         clang-version: '${{ env.CLANG }}'
@@ -419,7 +418,7 @@ runs:
         echo "::endgroup::"
 
     - name: Restore build cache
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25
       with:
         path: ${{ env.OUT_DIR }}
         key: cache-${{ env.CODENAME }}-${{ env.OS_SHORT }}-${{ inputs.optimize_level }}-${{ inputs.kernel_uname }}-${{ env.KERNEL_VERSION }}

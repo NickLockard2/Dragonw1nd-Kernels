@@ -127,7 +127,8 @@ runs:
         fi
         cd "${ROOT_DIR}/${KERNEL_DIR}/drivers/net/wireless/realtek/"
         rm -rf rtw88
-        git clone https://github.com/nullptr-t-oss/rtw88.git
+        git clone --filter=blob:none --no-checkout https://github.com/nullptr-t-oss/rtw88.git
+        git -C rtw88 checkout --detach 47bd81bd389c9ea4891e3c44c63deae591296566
         sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
         sed -i '/^source "drivers\/net\/wireless\/realtek\/rtw88\/Kconfig"$/s/.*/ /' Kconfig
         echo "FEATURES=${FEATURES:-} rtw88" >> "${GITHUB_ENV}"

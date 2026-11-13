@@ -113,9 +113,9 @@ runs:
         cd "${ROOT_DIR}"
         echo "Adding KernelSU Next..."
         if [[ "${{ inputs.ksun_branch_or_hash }}" = "" ]]; then
-          curl --fail --location --proto '=https' -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/dev/kernel/setup.sh" | bash -
+          curl --fail --location --proto '=https' -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/4c706b5938665866ebe16944a481a7b91e3396af/kernel/setup.sh" | bash -
         else
-          curl --fail --location --proto '=https' -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/dev/kernel/setup.sh" | bash -s "${{ inputs.ksun_branch_or_hash }}"
+          curl --fail --location --proto '=https' -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/4c706b5938665866ebe16944a481a7b91e3396af/kernel/setup.sh" | bash -s "${{ inputs.ksun_branch_or_hash }}"
         fi
         git submodule update --init --recursive
         cd KernelSU-Next/kernel
@@ -165,7 +165,7 @@ runs:
         echo "::endgroup::"
 
     - name: Download KSUN Manager
-      uses: nullptr-t-oss/composite_actions/fetch_ksu_manager@main
+      uses: nullptr-t-oss/composite_actions/fetch_ksu_manager@f3dc3e69c6a9f734ddf800224bb7396af3f3771d
       with:
         ksu-type: ksun
         dist-dir: ${DIST_DIR}
@@ -359,7 +359,9 @@ runs:
         echo "::group::Adding BBG"
         cd "${ROOT_DIR}"
         echo "Adding BBG..."
-        if ! wget -q -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash -s main; then
+        git clone --filter=blob:none --no-checkout https://github.com/vc-teahouse/Baseband-guard.git Baseband-guard
+        git -C Baseband-guard checkout --detach 028ff7fd509e2104596da7cc1ef8e6ce2a0c9082
+        if ! wget -q -O- https://raw.githubusercontent.com/vc-teahouse/Baseband-guard/028ff7fd509e2104596da7cc1ef8e6ce2a0c9082/setup.sh | bash -s 028ff7fd509e2104596da7cc1ef8e6ce2a0c9082; then
           echo "::warning::BBG setup script failed, continuing anyway"
         fi
         cd "${ROOT_DIR}/common"
