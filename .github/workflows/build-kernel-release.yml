@@ -63,6 +63,7 @@ on:
         type: choice
         options:
           - default
+          - manifest
           - aosp-clang-3289846
           - aosp-clang-r547379
           - aosp-clang-r563880
