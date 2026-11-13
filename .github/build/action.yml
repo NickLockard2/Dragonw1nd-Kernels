@@ -370,9 +370,18 @@ runs:
           export KCFLAGS="-mllvm -regalloc-enable-advisor=release"
         fi
 
-        # cpu tuning support ; define in build_config or device json
+        # CPU tuning support; define in build_config or device JSON. Some
+        # vendor-manifest toolchains predate newer Arm core names, so only add
+        # this optional optimization after the selected compiler accepts it.
         if [[ -n "${CPU_TUNE:-}" ]]; then
-          export KCFLAGS="${KCFLAGS:-} -mtune=${CPU_TUNE}"
+          if printf 'int cpu_tune_probe(void) { return 0; }\n' | \
+              clang --target=aarch64-linux-gnu -x c -c -o /dev/null - \
+                "-mtune=${CPU_TUNE}" >/dev/null 2>&1; then
+            export KCFLAGS="${KCFLAGS:-} -mtune=${CPU_TUNE}"
+            echo "CPU tune enabled: ${CPU_TUNE}"
+          else
+            echo "::warning::Selected clang does not support -mtune=${CPU_TUNE}; using its default AArch64 tuning"
+          fi
         fi
 
         # debug
