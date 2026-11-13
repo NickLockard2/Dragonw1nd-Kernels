@@ -458,6 +458,19 @@ runs:
         set +x
         _line
 
+        # Fail closed if Kconfig dependency resolution removes the SDR options
+        # required by the NetHunter profile. scripts/config can request child
+        # symbols successfully even when olddefconfig later drops them.
+        for required_config in \
+          CONFIG_MEDIA_SDR_SUPPORT \
+          CONFIG_USB_AIRSPY \
+          CONFIG_USB_HACKRF; do
+          if ! grep -Eq "^${required_config}=(y|m)$" "${OUT}/.config"; then
+            echo "::error::Required NetHunter config ${required_config} was removed during Kconfig dependency resolution"
+            exit 1
+          fi
+        done
+
         if [[ -n "${POST_DEFCONFIG_CMDS:-}" ]]; then
             echo -e "::debug:: Evaluating POST_DEFCONFIG_CMDS inside $(pwd)"
             set -x

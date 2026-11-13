@@ -565,8 +565,10 @@ runs:
           -e CONFIG_BT_HCIBPA10X \
           -e CONFIG_BT_HCIBFUSB
 
-        # Airspy & HackRF
+        # Airspy & HackRF. The parent must be enabled or olddefconfig silently
+        # drops both device options even when they were requested below.
         ./scripts/config --file arch/arm64/configs/kernel.config \
+          -e CONFIG_MEDIA_SDR_SUPPORT \
           -e CONFIG_USB_AIRSPY \
           -e CONFIG_USB_HACKRF
 
